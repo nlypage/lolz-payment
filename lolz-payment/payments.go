@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math"
 	"net/http"
 	"time"
 )
@@ -151,8 +150,8 @@ func (c *Client) PaymentsHistory(ctx context.Context, historyRequest PaymentsHis
 }
 
 // CreatePaymentLink returns a link to transfer funds to the account whose token you specified.
-func (c *Client) CreatePaymentLink(amount float64, comment string, redirectURL string) string {
-	return fmt.Sprintf("https://lzt.market/balance/transfer?username=%s&hold=0&amount=%f&comment=%s&redirect=%s", c.username, math.Ceil(amount), comment, redirectURL)
+func (c *Client) CreatePaymentLink(amount int, comment string, redirectURL string, currency string) string {
+	return fmt.Sprintf("https://lzt.market/balance/transfer?username=%s&hold=0&amount=%d&comment=%s&redirect=%s&currency=%s", c.username, amount, comment, redirectURL, currency)
 }
 
 type PaymentsHandlerOptions struct {
@@ -198,11 +197,11 @@ func (c *Client) HandlePayments(handlerFunc HandlerFunc, options *PaymentsHandle
 		}
 
 		if options.Period.Seconds() == 0 {
-			options.Period = time.Second
+			options.Period = DefaultPaymentsHandlerOptions.Period
 		}
 
 		if options.Type == "" {
-			options.Type = "receiving_money"
+			options.Type = DefaultPaymentsHandlerOptions.Type
 		}
 
 		for {
