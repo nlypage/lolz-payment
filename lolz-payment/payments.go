@@ -72,7 +72,7 @@ type Payment struct {
 	IsFinished    int         `json:"is_finished,omitempty"`
 	IsHold        int         `json:"is_hold,omitempty"`
 	PaymentSystem string      `json:"payment_system,omitempty"`
-	Data          PaymentData `json:"data,omitempty"`
+	Data          PaymentData `json:"data,omitempty"` // The list can be returned in this key, I've given up on it. Read the note on the PaymentsHistory function
 	HoldEndDate   int         `json:"hold_end_date,omitempty"`
 	Api           int         `json:"api,omitempty"`
 	PaymentStatus string      `json:"payment_status,omitempty"`
@@ -83,10 +83,15 @@ type Payment struct {
 type Payments map[string]Payment
 
 type paymentsHistoryResponse struct {
-	Payments Payments `json:"payments,omitempty"`
+	Payments Payments `json:"payments,omitempty"` // The list can be returned in this key, I've given up on it. Read the note on the PaymentsHistory function
 }
 
 // PaymentsHistory is a function to get user payments history using user/:userID/payments endpoint.
+/*
+	Note to the function, due to the fact that php, if the structure is empty, returns an empty list, errors may occur when json unmarshall in payments and data
+	I chose to just ignore them :D
+	If you have a desire, you can do something about it <3.
+*/
 func (c *Client) PaymentsHistory(ctx context.Context, historyRequest PaymentsHistoryRequest) (Payments, error) {
 	r := &request{
 		method:   http.MethodGet,
@@ -126,7 +131,7 @@ func (c *Client) PaymentsHistory(ctx context.Context, historyRequest PaymentsHis
 		r.setParam("comment", historyRequest.Comment)
 	}
 	if historyRequest.IsHold != nil {
-		r.setParam("is_hold", historyRequest.IsHold)
+		r.setParam("is_hold", *historyRequest.IsHold)
 	}
 	if historyRequest.ShowPaymentsStats != nil {
 		r.setParam("show_payment_stats", historyRequest.ShowPaymentsStats)
@@ -171,10 +176,10 @@ var DefaultPaymentsHandlerOptions *PaymentsHandlerOptions = &PaymentsHandlerOpti
 
 type HandlerFunc func(payment Payment) error
 
+// HandlePayments will send new payments to your handlerFunction.
 /*
-HandlePayments will send new payments to your handlerFunction.
-it starts periodic verification of new payments in goroutine,
-if your code ends after calling this one, you need to set WaitGroup.
+	it starts periodic verification of new payments in goroutine,
+	if your code ends after calling this one, you need to set WaitGroup.
 */
 func (c *Client) HandlePayments(handlerFunc HandlerFunc, options *PaymentsHandlerOptions) {
 	go func() {
@@ -209,10 +214,12 @@ func (c *Client) HandlePayments(handlerFunc HandlerFunc, options *PaymentsHandle
 
 			for _, payment := range newPayments {
 				if !firstStart {
-					errHandle := handlerFunc(payment)
-					if errHandle != nil {
-						log.Println(fmt.Errorf("got error while handling payment %d: %w", payment.OperationID, errHandle))
-					}
+					go func() {
+						errHandle := handlerFunc(payment)
+						if errHandle != nil {
+							log.Println(fmt.Errorf("got error while handling payment %d: %w", payment.OperationID, errHandle))
+						}
+					}()
 				}
 				lastPaymentDate = max(lastPaymentDate, payment.OperationDate)
 			}
