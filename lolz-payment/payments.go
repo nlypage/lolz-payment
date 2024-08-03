@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"time"
 )
@@ -149,6 +150,11 @@ func (c *Client) PaymentsHistory(ctx context.Context, historyRequest PaymentsHis
 	return res.Payments, nil
 }
 
+// CreatePaymentLink returns a link to transfer funds to the account whose token you specified.
+func (c *Client) CreatePaymentLink(amount float64, comment string, redirectURL string) string {
+	return fmt.Sprintf("https://lzt.market/balance/transfer?username=%s&hold=0&amount=%f&comment=%s&redirect=%s", c.username, math.Ceil(amount), comment, redirectURL)
+}
+
 type PaymentsHandlerOptions struct {
 	// Type field is optional. Default is "receiving_money"
 	Type string
@@ -184,9 +190,8 @@ type HandlerFunc func(payment Payment) error
 func (c *Client) HandlePayments(handlerFunc HandlerFunc, options *PaymentsHandlerOptions) {
 	go func() {
 		var (
-			lastPaymentDate int64
+			lastPaymentDate int64 = time.Now().Unix()
 		)
-		firstStart := true
 
 		if options == nil {
 			options = DefaultPaymentsHandlerOptions
@@ -202,6 +207,7 @@ func (c *Client) HandlePayments(handlerFunc HandlerFunc, options *PaymentsHandle
 
 		for {
 			newPayments, _ := c.PaymentsHistory(context.Background(), PaymentsHistoryRequest{
+				UserID:    c.userID,
 				Type:      options.Type,
 				StartDate: time.Unix(lastPaymentDate, 0).Add(time.Second),
 				EndDate:   time.Now().Add(time.Hour * 24),
@@ -213,17 +219,14 @@ func (c *Client) HandlePayments(handlerFunc HandlerFunc, options *PaymentsHandle
 			})
 
 			for _, payment := range newPayments {
-				if !firstStart {
-					go func() {
-						errHandle := handlerFunc(payment)
-						if errHandle != nil {
-							log.Println(fmt.Errorf("got error while handling payment %d: %w", payment.OperationID, errHandle))
-						}
-					}()
-				}
+				go func() {
+					errHandle := handlerFunc(payment)
+					if errHandle != nil {
+						log.Println(fmt.Errorf("got error while handling payment %d: %w", payment.OperationID, errHandle))
+					}
+				}()
 				lastPaymentDate = max(lastPaymentDate, payment.OperationDate)
 			}
-			firstStart = false
 
 			time.Sleep(options.Period)
 		}

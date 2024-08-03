@@ -8,9 +8,16 @@ import (
 	"time"
 )
 
+const (
+	baseUrl = "https://api.lzt.market/"
+)
+
 type Client struct {
 	token   string
 	baseURL string
+
+	userID   int
+	username string
 
 	httpClient *http.Client
 }
@@ -27,7 +34,7 @@ type Options struct {
 }
 
 // NewClient creates a new lolz_payment client to interact with api.
-func NewClient(options Options) *Client {
+func NewClient(options Options) (*Client, error) {
 	c := &Client{
 		token: options.Token,
 	}
@@ -36,7 +43,7 @@ func NewClient(options Options) *Client {
 		clientTimeout = options.ClientTimeout
 	}
 
-	c.baseURL = "https://api.lzt.market/"
+	c.baseURL = baseUrl
 	if options.BaseURL != "" {
 		c.baseURL = options.BaseURL
 	}
@@ -45,7 +52,15 @@ func NewClient(options Options) *Client {
 		Timeout: clientTimeout,
 	}
 
-	return c
+	profile, err := c.Me(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	c.userID = profile.UserID
+	c.username = profile.Username
+
+	return c, nil
 }
 
 func (c *Client) parseRequest(r *request) (err error) {
