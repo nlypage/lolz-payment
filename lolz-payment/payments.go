@@ -45,39 +45,39 @@ type PaymentsHistoryRequest struct {
 }
 
 type PaymentData struct {
-	UserID              int    `json:"user_id,omitempty"`
-	Username            string `json:"username,omitempty"`
-	Comment             string `json:"comment,omitempty"`
-	IsBanned            int    `json:"is_banned,omitempty"`
-	DisplayStyleGroupId int    `json:"display_style_group_id,omitempty"`
-	UniqUsernameCss     string `json:"uniq_username_css,omitempty"`
-	AvatarDate          int    `json:"avatar_date,omitempty"`
-	UserGroupId         int    `json:"user_group_id,omitempty"`
+	UserID              int    `json:"user_id"`
+	Username            string `json:"username"`
+	Comment             string `json:"comment"`
+	IsBanned            int    `json:"is_banned"`
+	DisplayStyleGroupId int    `json:"display_style_group_id"`
+	UniqUsernameCss     string `json:"uniq_username_css"`
+	AvatarDate          int    `json:"avatar_date"`
+	UserGroupId         int    `json:"user_group_id"`
 }
 
 type UserBalance struct {
-	UserID              int `json:"user_id,omitempty"`
-	UserBalance         int `json:"user_balance,omitempty"`
-	UserHold            int `json:"user_hold,omitempty"`
-	UserBalanceWithHold int `json:"user_balance_with_hold,omitempty"`
+	UserID              int `json:"user_id"`
+	UserBalance         int `json:"user_balance"`
+	UserHold            int `json:"user_hold"`
+	UserBalanceWithHold int `json:"user_balance_with_hold"`
 }
 
 type Payment struct {
-	OperationID   int         `json:"operation_id,omitempty"`
-	OperationDate int64       `json:"operation_date,omitempty"`
-	OperationType string      `json:"operation_type,omitempty"`
-	OutgoingSum   int         `json:"outgoing_sum,omitempty"`
-	IncomingSum   int         `json:"incoming_sum,omitempty"`
-	ItemID        int         `json:"item_id,omitempty"`
-	Wallet        string      `json:"wallet,omitempty"`
-	IsFinished    int         `json:"is_finished,omitempty"`
-	IsHold        int         `json:"is_hold,omitempty"`
-	PaymentSystem string      `json:"payment_system,omitempty"`
+	OperationID   int         `json:"operation_id"`
+	OperationDate int64       `json:"operation_date"`
+	OperationType string      `json:"operation_type"`
+	OutgoingSum   int         `json:"outgoing_sum"`
+	IncomingSum   int         `json:"incoming_sum"`
+	ItemID        int         `json:"item_id"`
+	Wallet        string      `json:"wallet"`
+	IsFinished    int         `json:"is_finished"`
+	IsHold        int         `json:"is_hold"`
+	PaymentSystem string      `json:"payment_system"`
 	Data          PaymentData `json:"data,omitempty"` // The list can be returned in this key, I've given up on it. Read the note on the PaymentsHistory function
-	HoldEndDate   int         `json:"hold_end_date,omitempty"`
-	Api           int         `json:"api,omitempty"`
-	PaymentStatus string      `json:"payment_status,omitempty"`
-	User          UserBalance `json:"user,omitempty"`
+	HoldEndDate   int         `json:"hold_end_date"`
+	Api           int         `json:"api"`
+	PaymentStatus string      `json:"payment_status"`
+	User          UserBalance `json:"user"`
 }
 
 // Payments map key - is payment ID.
