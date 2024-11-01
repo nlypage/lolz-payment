@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -31,6 +32,9 @@ type Options struct {
 
 	// BaseURL field is optional. Default is https://api.lzt.market/.
 	BaseURL string
+
+	// ProxyURL field is optional. Example: "http://user:pass@ip:port" or "socks5://ip:port"
+	ProxyURL string
 }
 
 // NewClient creates a new lolz_payment client to interact with api.
@@ -38,6 +42,7 @@ func NewClient(options Options) (*Client, error) {
 	c := &Client{
 		token: options.Token,
 	}
+
 	clientTimeout := 30 * time.Second
 	if options.ClientTimeout != 0 {
 		clientTimeout = options.ClientTimeout
@@ -48,8 +53,24 @@ func NewClient(options Options) (*Client, error) {
 		c.baseURL = options.BaseURL
 	}
 
+	transport := &http.Transport{
+		MaxIdleConns:       100,
+		IdleConnTimeout:    90 * time.Second,
+		DisableCompression: true,
+	}
+
+	// Добавляем прокси если он указан
+	if options.ProxyURL != "" {
+		proxyURL, err := url.Parse(options.ProxyURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse proxy URL: %w", err)
+		}
+		transport.Proxy = http.ProxyURL(proxyURL)
+	}
+
 	c.httpClient = &http.Client{
-		Timeout: clientTimeout,
+		Transport: transport,
+		Timeout:   clientTimeout,
 	}
 
 	profile, err := c.Me(context.Background())
